@@ -1,13 +1,11 @@
-using Application.Core;
-using Application.Dtos;
+using API.DTOs;
+using API.Services;
 using Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Text;
 
 namespace API.Controllers
 {
@@ -16,123 +14,129 @@ namespace API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly UserManager<Member> _userManager;
-        private readonly SignInManager<Member> _signInManager;
-        private readonly IConfiguration _config;
+        private readonly TokenService _tokenService;
 
-        public AccountController(UserManager<Member> userManager, SignInManager<Member> signInManager, IConfiguration config)
+        public AccountController(
+            UserManager<Member> userManager,
+            TokenService tokenService)
         {
             _userManager = userManager;
-            _signInManager = signInManager;
-            _config = config;
+            _tokenService = tokenService;
         }
 
-        [HttpPost("login")]
         [AllowAnonymous]
+        [HttpPost("create")]
+        public async Task<ActionResult<UserDto>> CreateMember(RegisterDto registerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem();
+            }
+
+            if (await _userManager.Users.AnyAsync(x => x.Email == registerDto.Email))
+            {
+                ModelState.AddModelError("email", "Email is already taken");
+                return ValidationProblem();
+            }
+
+            if (await _userManager.Users.AnyAsync(x => x.UserName == registerDto.Username))
+            {
+                ModelState.AddModelError("username", "Username is already taken");
+                return ValidationProblem();
+            }
+
+            var names = (registerDto.DisplayName ?? string.Empty).Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            var firstName = names.Length > 0 ? names[0] : string.Empty;
+            var lastName = names.Length > 1 ? names[1] : string.Empty;
+
+            var user = new Member
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                DisplayName = registerDto.DisplayName,
+                Email = registerDto.Email,
+                UserName = registerDto.Username
+            };
+
+            var result = await _userManager.CreateAsync(user, registerDto.Password);
+
+            if (result.Succeeded)
+            {
+                return CreateUserObject(user);
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(error.Code, error.Description);
+            }
+
+            return ValidationProblem();
+        }
+
+        [AllowAnonymous]
+        [HttpPost("login")]
         public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
-            // Try to find user by username (case-insensitive)
-            var user = await _userManager.FindByNameAsync(loginDto.Username);
-            
-            // If not found by username, try by email
-            if (user == null)
+            var email = loginDto.Email?.Trim();
+            var username = loginDto.Username?.Trim();
+
+            Member? user = null;
+
+            if (!string.IsNullOrWhiteSpace(email))
             {
-                user = await _userManager.FindByEmailAsync(loginDto.Username);
+                user = await _userManager.FindByEmailAsync(email);
             }
-            
-            if (user == null)
-                return Unauthorized("Invalid username or password");
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
-
-            if (!result.Succeeded)
+            if (user == null && !string.IsNullOrWhiteSpace(username))
             {
-                // Log the failure reason for debugging
-                if (result.IsLockedOut)
-                    return Unauthorized("Account is locked out");
-                if (result.IsNotAllowed)
-                    return Unauthorized("Account is not allowed to sign in");
-                if (result.RequiresTwoFactor)
-                    return Unauthorized("Two-factor authentication required");
-                
+                user = await _userManager.FindByNameAsync(username);
+            }
+
+            if (user == null)
+            {
                 return Unauthorized("Invalid username or password");
             }
 
-            // Check if user is an admin - only admins can login
-            if (!user.IsAdmin)
+            var passwordValid = await _userManager.CheckPasswordAsync(user, loginDto.Password);
+
+            if (!passwordValid)
             {
-                return Unauthorized("Access denied. Only admin members can login.");
+                return Unauthorized("Invalid username or password");
             }
 
-            return new UserDto
-            {
-                Username = user.UserName,
-                Token = CreateToken(user),
-                Email = user.Email
-            };
+            return CreateUserObject(user);
         }
 
         [Authorize]
         [HttpGet("current")]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            var user = await _userManager.FindByNameAsync(User.Identity?.Name ?? "");
-            
-            if (user == null)
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            if (string.IsNullOrEmpty(email))
+            {
                 return Unauthorized();
-
-            return new UserDto
-            {
-                Username = user.UserName,
-                Token = CreateToken(user),
-                Email = user.Email
-            };
-        }
-
-        private string CreateToken(Member user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.UserName ?? ""),
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Email, user.Email ?? "")
-            };
-
-            var roles = _userManager.GetRolesAsync(user).Result;
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                _config["TokenKey"] ?? "super-secret-key-that-should-be-at-least-32-characters-long-for-security"));
-            
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var user = await _userManager.FindByEmailAsync(email);
 
-            var tokenDescriptor = new SecurityTokenDescriptor
+            if (user == null)
             {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddDays(7),
-                SigningCredentials = creds
-            };
+                return Unauthorized();
+            }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-
-            return tokenHandler.WriteToken(token);
+            return CreateUserObject(user);
         }
-    }
 
-    public class LoginDto
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class UserDto
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Token { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
+        private UserDto CreateUserObject(Member user)
+        {
+            return new UserDto
+            {
+                DisplayName = user.DisplayName,
+                Username = user.UserName,
+                Token = _tokenService.CreateToken(user)
+            };
+        }
     }
 }
 

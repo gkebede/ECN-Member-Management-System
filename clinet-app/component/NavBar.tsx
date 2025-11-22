@@ -25,7 +25,7 @@ const NavBar = observer(function NavBar() {
 
   const navLinks = [
     { label: "Home", path: "/" },
-    { label: "About", path: "/acconut" },
+    { label: "About", path: "/about" },
     { label: "Account", path: "/account" },
     { label: "Contact", path: "/contact" },
   ];

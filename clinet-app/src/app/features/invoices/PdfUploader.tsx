@@ -1,7 +1,7 @@
-import React, { ChangeEvent } from 'react';
+import type { ChangeEvent, FC } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import agent from '../../lib/api/agent';
-import { Member } from '../../lib/types';
+import type { Member } from '../../lib/types';
 
 interface UploadFilesProps {
   files: File[];
@@ -11,7 +11,7 @@ interface UploadFilesProps {
   member:Member
 }
 
-const UploadFiles: React.FC<UploadFilesProps> = ({
+const UploadFiles: FC<UploadFilesProps> = ({
   files = [], // fallback to empty array
   onFilesChange,
   accept = '.png,.jpg,.jpeg,.pdf',

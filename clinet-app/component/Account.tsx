@@ -3,11 +3,11 @@ import {
   Container,
   Box,
   Paper,
-  Grid,
   Card,
   CardContent,
   Divider,
 } from '@mui/material';
+ 
 import {
   AccountCircle,
   Phone,
@@ -30,9 +30,12 @@ export default function Account() {
     email: 'info@ecnnetwork.org',
   };
 
-  const fullAddress = `${accountInfo.address.street}, ${accountInfo.address.city}, ${accountInfo.address.state} ${accountInfo.address.zipCode}`;
+    const { accountNumber, address } = accountInfo;
+    const { street, city, state, zipCode } = address;
 
-  return (
+    const fullAddress = `${street}, ${city}, ${state} ${zipCode}`;
+
+    return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header Section */}
       <Box sx={{ textAlign: 'center', mb: 6 }}>
@@ -72,16 +75,22 @@ export default function Account() {
               Account Number
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              {accountInfo.accountNumber}
+              {accountNumber}
             </Typography>
           </Box>
         </Box>
       </Paper>
 
       {/* Contact Information Cards */}
-      <Grid container spacing={4}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+          gap: 4,
+        }}
+      >
         {/* Address Card */}
-        <Grid item xs={12} md={6}>
+        <Box component="section">
           <Card
             sx={{
               height: '100%',
@@ -104,16 +113,14 @@ export default function Account() {
               </Box>
               <Divider sx={{ mb: 3 }} />
               <Typography variant="body1" sx={{ lineHeight: 2, color: 'text.primary' }}>
-                {accountInfo.address.street}
-                <br />
-                {accountInfo.address.city}, {accountInfo.address.state} {accountInfo.address.zipCode}
+                {fullAddress}
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Phone Card */}
-        <Grid item xs={12} md={6}>
+        <Box component="section">
           <Card
             sx={{
               height: '100%',
@@ -140,10 +147,10 @@ export default function Account() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Email Card */}
-        <Grid item xs={12} md={6}>
+        <Box component="section">
           <Card
             sx={{
               height: '100%',
@@ -170,10 +177,10 @@ export default function Account() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Account Details Card */}
-        <Grid item xs={12} md={6}>
+        <Box component="section">
           <Card
             sx={{
               height: '100%',
@@ -215,8 +222,8 @@ export default function Account() {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Additional Information */}
       <Paper

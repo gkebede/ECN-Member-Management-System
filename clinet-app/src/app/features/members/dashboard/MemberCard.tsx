@@ -1,9 +1,10 @@
 import {
   Box, Button, Card, CardActions, CardContent, CardHeader,
-  Chip,  Grid,  Table, TableBody, TableCell,
-  TableHead, TableRow, Typography, Collapse, IconButton
+  Chip, Grid, Table, TableBody, TableCell,
+  TableHead, TableRow, Typography, Collapse, IconButton,
+  Paper, List, ListItem, ListItemIcon, ListItemText, Divider
 } from "@mui/material";
-import { Delete as DeleteIcon, ExpandMore, ExpandLess } from "@mui/icons-material";
+import { Delete as DeleteIcon, ExpandMore, ExpandLess, LocationOn } from "@mui/icons-material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 //import { Member } from "../../../lib/types";
 import { format } from "date-fns";
@@ -57,6 +58,14 @@ export default function MemberCard({ member, onDeleteClick }: Props) {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   };
 
+  const formatAddressLine = (address?: Member['addresses'][number]) => {
+    if (!address) return 'N/A';
+    const main = [address.street, address.city, address.state].filter(Boolean).join(', ');
+    const zip = address.zipCode ? ` ${address.zipCode}` : '';
+    const country = address.country ? `, ${address.country}` : '';
+    return `${main}${zip}${country}`.trim() || 'N/A';
+  };
+
   return (
     <Grid container justifyContent="center" mt={10}>
       <Grid>
@@ -78,6 +87,37 @@ export default function MemberCard({ member, onDeleteClick }: Props) {
           <CardContent>
             <Typography mb={2} variant="h6"><strong>Email:</strong> {member.email}</Typography>
             <Typography mb={2} variant="h6"><strong>Phone:</strong> {member.phoneNumber}</Typography>
+            <Box mb={3}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#006663', mb: 1 }}>
+                Addresses
+              </Typography>
+              {member.addresses && member.addresses.length > 0 ? (
+                <Paper variant="outlined" sx={{ borderRadius: 2 }}>
+                  <List disablePadding>
+                    {member.addresses.map((addr, idx) => (
+                      <Box component="li" key={addr.id || idx}>
+                        <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
+                          <ListItemIcon sx={{ minWidth: 40, color: '#006663' }}>
+                            <LocationOn />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={formatAddressLine(addr)}
+                            secondary={
+                              addr.street && addr.city
+                                ? `${addr.street}${addr.city ? ` • ${addr.city}` : ''}`
+                                : undefined
+                            }
+                          />
+                        </ListItem>
+                        {idx < member.addresses.length - 1 && <Divider component="div" />}
+                      </Box>
+                    ))}
+                  </List>
+                </Paper>
+              ) : (
+                <Typography variant="body2" color="text.secondary">No address on file</Typography>
+              )}
+            </Box>
 
             {member.bio && (
               <Chip
@@ -165,6 +205,7 @@ export default function MemberCard({ member, onDeleteClick }: Props) {
                 <TableHead>
                   <TableRow>
                     <TableCell><strong>Number of Event</strong></TableCell>
+                    <TableCell><strong>Incident Date</strong></TableCell>
                     <TableCell><strong>Payment Amount</strong></TableCell>
                     <TableCell><strong>Date of Payment</strong></TableCell>
                     <TableCell><strong>Payment Slips</strong></TableCell>
@@ -182,6 +223,15 @@ export default function MemberCard({ member, onDeleteClick }: Props) {
                             : "N/A"}
                         </TableCell>
                         <TableCell>
+                          {member.incidents && member.incidents[idx] && member.incidents[idx].incidentDate
+                            ? formatSafeDate(member.incidents[idx].incidentDate)
+                            : member.incidents && member.incidents[idx] && member.incidents[idx].paymentDate
+                            ? formatSafeDate(member.incidents[idx].paymentDate)
+                            : member.incidents && member.incidents.length > 0
+                            ? formatSafeDate(member.incidents[0].incidentDate || member.incidents[0].paymentDate)
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
                           {formatCurrency(pmt.paymentAmount)}
                         </TableCell>
                         <TableCell>
@@ -189,17 +239,22 @@ export default function MemberCard({ member, onDeleteClick }: Props) {
                         </TableCell>
                         <TableCell>
                           {(() => {
-                            // Filter files to only show those with valid base64FileData
-                            const validFiles = member.memberFiles?.filter(
-                              file => file.base64FileData && file.base64FileData.trim() !== ''
-                            ) || [];
-                            
-                            if (validFiles.length === 0) {
+                            const files = member.memberFiles ?? [];
+                            const paymentId = pmt.id;
+                            const matchedFile = paymentId
+                              ? files.find(f => f.paymentId === paymentId)
+                              : undefined;
+                            const fallbackFile = files[idx] && files[idx].base64FileData?.trim()
+                              ? files[idx]
+                              : files.find(f => f.base64FileData && f.base64FileData.trim() !== '');
+                            const file = matchedFile || fallbackFile;
+
+                            if (!file) {
                               return "N/A";
                             }
-                            
-                            return validFiles.map((file, fileIdx) => (
-                              <div key={fileIdx} style={{ marginBottom: "5px" }}>
+
+                            return (
+                              <div style={{ marginBottom: "5px" }}>
                                 <RouterLink
                                   to={`/memberList/recipts/${file.id}`}
                                   style={{
@@ -211,14 +266,14 @@ export default function MemberCard({ member, onDeleteClick }: Props) {
                                   {file.fileName || "Receipt"}
                                 </RouterLink>
                               </div>
-                            ));
+                            );
                           })()}
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         <Typography color="text.secondary">No payment information available</Typography>
                       </TableCell>
                     </TableRow>

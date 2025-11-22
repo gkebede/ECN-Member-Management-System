@@ -1,13 +1,4 @@
 ﻿
-using System.Text.Json.Serialization;
-using Application.Core;
-using Application.MediatR;
-using Domain;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
-using Newtonsoft.Json;
-using Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +25,7 @@ builder.Services.AddCors(options =>
                {
                    //policy.AllowAnyMethod().AllowAnyHeader().WithOrigins("*");
                    policy.AllowAnyMethod().AllowAnyHeader()
-                   .WithOrigins("http://localhost:3000", "https://localhost:3000");
+                   .WithOrigins("http://localhost:3000");
                });
 
            });

@@ -1,8 +1,10 @@
 import {
   Box, Button, Checkbox, CircularProgress,
-  Container, FormControlLabel, Paper,
+  Container, FormControl, FormControlLabel, InputLabel, MenuItem, Paper,
   TextField, Typography
 } from '@mui/material';
+import Select from '@mui/material/Select';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
@@ -37,7 +39,12 @@ const defaultMember: Member = {
   memberFiles: [],
 };
 
-function   MemberForm() {
+const formatCurrencyValue = (amount?: number) => {
+  if (amount == null || isNaN(amount)) return 'N/A';
+  return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+};
+
+function MemberForm() {
   const { memberStore } = useStore();
   const { selectedMember, editMode, setEditMode, loadMember } = memberStore;
   const { id } = useParams<{ id: string }>();
@@ -50,6 +57,8 @@ function   MemberForm() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [memberFiles, setMemberFiles] = useState<MemberFile[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string>('');
+  const [fileDescription, setFileDescription] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email);
@@ -107,9 +116,6 @@ function   MemberForm() {
       setFamilyMembers(selectedMember.familyMembers ?? []);
       
       // Log payments for debugging
-      console.log("Loading payments for edit:", selectedMember.payments);
-      console.log("Payments count:", selectedMember.payments?.length ?? 0);
-      
       setPayments(selectedMember.payments ?? []);
       setIncidents(selectedMember.incidents ?? []);
       setMemberFiles(selectedMember.memberFiles ?? []);
@@ -126,6 +132,8 @@ function   MemberForm() {
     setIncidents([]);
     setMemberFiles([]);
     setFiles([]);
+    setSelectedPaymentId('');
+    setFileDescription('');
   };
 
   const handleInputChange = (
@@ -157,21 +165,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
     if (editMode) {
       // Log the data being sent for debugging
-      console.log("Updating member with data:", {
-        id: updatedMember.id,
-        firstName: updatedMember.firstName,
-        addressesCount: updatedMember.addresses?.length ?? 0,
-        familyMembersCount: updatedMember.familyMembers?.length ?? 0,
-        paymentsCount: updatedMember.payments?.length ?? 0,
-        incidentsCount: updatedMember.incidents?.length ?? 0,
-        memberFilesCount: updatedMember.memberFiles?.length ?? 0,
-        addresses: updatedMember.addresses,
-        familyMembers: updatedMember.familyMembers,
-        payments: updatedMember.payments,
-        incidents: updatedMember.incidents,
-        memberFiles: updatedMember.memberFiles,
-      });
-      
       await agent.Members.update(updatedMember);
       
       // Reload member details to get updated memberFiles (including newly uploaded ones)
@@ -193,21 +186,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     } else {
       //  Use the FormData version for creating
       try {
-        console.log("Creating member with data:", {
-          firstName: updatedMember.firstName,
-          lastName: updatedMember.lastName,
-          email: updatedMember.email,
-          addressesCount: updatedMember.addresses?.length ?? 0,
-          familyMembersCount: updatedMember.familyMembers?.length ?? 0,
-          paymentsCount: updatedMember.payments?.length ?? 0,
-          incidentsCount: updatedMember.incidents?.length ?? 0,
-          filesCount: files.length,
-        });
-
         const result = await agent.Members.create(updatedMember, files);
-
-        console.log("Create member API response:", result);
-        console.log("Response type:", typeof result);
 
         // HandleResult returns Ok(result.Value), so the response is just the string ID
         // Check if result is a string (member ID) or Result object (for backward compatibility)
@@ -242,9 +221,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           return;
         }
 
-        console.log("Member created successfully with ID:", memberId);
-        console.log("Navigating to member list...");
-        
         // Navigate to member list after successful creation
         navigate('/memberList');
         
@@ -253,7 +229,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         setTimeout(async () => {
           try {
             await memberStore.loadAllMembers();
-            console.log("Member list reloaded successfully");
           } catch (loadError) {
             console.error("Error reloading member list:", loadError);
             // Navigation already happened, so continue
@@ -275,8 +250,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           }
         }
         
-        console.error("Error creating member:", errorMsg);
-        console.error("Full error:", error);
         alert(`Error creating member: ${errorMsg}`);
         // Don't navigate on error - let user fix and try again
       }
@@ -302,28 +275,43 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     }
   };
 
+  useEffect(() => {
+    if (selectedPaymentId && !payments.some(p => p.id === selectedPaymentId)) {
+      setSelectedPaymentId('');
+    }
+  }, [payments, selectedPaymentId]);
+
   const handleUpload = async () => {
     if (!files.length || !member.id) return;
 
     try {
-      console.log("Uploading files for member:", member.id);
-      await agent.Members.uploadFiles(member.id, files);
+      await agent.Members.uploadFiles(
+        member.id,
+        files,
+        fileDescription || undefined,
+        selectedPaymentId || undefined
+      );
       
       // Reload member details to get updated memberFiles
       const refreshed = await agent.Members.details(member.id);
       if (refreshed && refreshed.value) {
         setMemberFiles(refreshed.value.memberFiles ?? []);
-        console.log("MemberFiles refreshed:", refreshed.value.memberFiles?.length ?? 0);
       }
       
       // Clear the file input
       setFiles([]);
+      setSelectedPaymentId('');
+      setFileDescription('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
       console.error("Upload failed:", error);
     }
+  };
+
+  const handlePaymentSelection = (event: SelectChangeEvent<string>) => {
+    setSelectedPaymentId(event.target.value);
   };
 
   // Individual save handlers for each section
@@ -351,16 +339,18 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
   const handleSavePayments = async (updatedPayments: Payment[]) => {
     if (!member.id) return;
-    console.log('handleSavePayments - Saving payments:', updatedPayments);
     const updatedMember = { ...member, payments: updatedPayments };
-    console.log('handleSavePayments - Updated member payload:', JSON.stringify(updatedMember, null, 2));
     await agent.Members.update(updatedMember);
     // Reload member to get latest data - use store's loadMember to ensure proper normalization
     await loadMember(member.id);
     // Update local state from the store's selectedMember (which is now normalized)
-    if (selectedMember) {
-      console.log('handleSavePayments - Reloaded payments from store:', selectedMember.payments);
-      setPayments(selectedMember.payments ?? []);
+    if (memberStore.selectedMember) {
+      const refreshedPayments = memberStore.selectedMember.payments ?? [];
+      setPayments(refreshedPayments);
+      setMember(prev => ({
+        ...prev,
+        payments: refreshedPayments,
+      }));
     }
   };
 
@@ -516,7 +506,40 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                 style={{ display: 'none' }}
               />
 
+              {editMode && payments.length > 0 && (
+                <FormControl sx={{ mt: 2, minWidth: 280 }}>
+                  <InputLabel id="attach-payment-label">Attach Receipt To</InputLabel>
+                  <Select
+                    labelId="attach-payment-label"
+                    value={selectedPaymentId}
+                    label="Attach Receipt To"
+                    onChange={handlePaymentSelection}
+                  >
+                    <MenuItem value="">
+                      No specific payment
+                    </MenuItem>
+                    {payments.map((pmt, index) => (
+                      <MenuItem value={pmt.id || ''} key={pmt.id || index}>
+                        {`Payment ${index + 1} - ${formatCurrencyValue(
+                          typeof pmt.paymentAmount === 'number'
+                            ? pmt.paymentAmount
+                            : Number(pmt.paymentAmount)
+                        )} (${pmt.paymentDate || 'No date'})`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+
               <Box mt={2}>
+                <TextField
+                  label="Receipt description"
+                  value={fileDescription}
+                  onChange={(e) => setFileDescription(e.target.value)}
+                  fullWidth
+                  placeholder="e.g., February dues receipt"
+                  sx={{ mb: 2 }}
+                />
                 <Button variant="contained" onClick={() => fileInputRef.current?.click()}>
                   Select Files
                 </Button>

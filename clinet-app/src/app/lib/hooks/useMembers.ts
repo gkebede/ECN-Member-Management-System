@@ -1,8 +1,7 @@
- // import axios from 'axios';
- 
+
 import { useQuery } from '@tanstack/react-query';
-import { Member } from '../types';
 import agent from '../api/agent';
+import type { Member } from '../types';
 
 
 export const useMembers = () => {

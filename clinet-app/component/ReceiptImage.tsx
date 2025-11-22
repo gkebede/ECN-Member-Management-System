@@ -52,12 +52,16 @@ return (
   style={{ maxWidth: "90%", height: "auto", border: "1px solid #ccc", borderRadius: 8 }}
 />
 
- <Typography mb={1} variant="h6">
-          <strong>Email:</strong> {file.email}
-        </Typography>
-        <Typography mb={1} variant="h6">
-          <strong>Phone:</strong>  
-        </Typography>
+    {file.fileDescription && (
+      <Typography mb={1} variant="h6">
+        <strong>Description:</strong> {file.fileDescription}
+      </Typography>
+    )}
+    {file.paymentId && (
+      <Typography mb={1} variant="h6">
+        <strong>Linked Payment:</strong> {file.paymentId}
+      </Typography>
+    )}
   </div>
 );
 })

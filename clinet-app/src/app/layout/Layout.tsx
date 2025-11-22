@@ -22,7 +22,7 @@ export default function Layout() {
       >
         <Toolbar />
         <Box sx={{ overflow: 'auto', padding: 2 }}>
-          {/* Your menu items here */}
+          {/* menu items here */}
           <p>Home</p>
           <p>Profile</p>
           <p>Settings</p>

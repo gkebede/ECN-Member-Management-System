@@ -162,6 +162,7 @@ const MemberList = function ({ members }: Props) {
                                 <TableHead>
                                   <TableRow>
                                     <TableCell>Number of Event</TableCell>
+                                    <TableCell>Incident Date</TableCell>
                                     <TableCell>Payment Amount</TableCell>
                                     <TableCell>Date of Payment</TableCell>
                                     <TableCell>Payment Slips</TableCell>
@@ -179,6 +180,15 @@ const MemberList = function ({ members }: Props) {
                                             : "N/A"}
                                         </TableCell>
                                         <TableCell>
+                                          {member.incidents && member.incidents[idx] && member.incidents[idx].incidentDate
+                                            ? formatSafeDate(member.incidents[idx].incidentDate)
+                                            : member.incidents && member.incidents[idx] && member.incidents[idx].paymentDate
+                                            ? formatSafeDate(member.incidents[idx].paymentDate)
+                                            : member.incidents && member.incidents.length > 0
+                                            ? formatSafeDate(member.incidents[0].incidentDate || member.incidents[0].paymentDate)
+                                            : "N/A"}
+                                        </TableCell>
+                                        <TableCell>
                                           {formatCurrency(payment.paymentAmount)}
                                         </TableCell>
                                         <TableCell>
@@ -186,17 +196,20 @@ const MemberList = function ({ members }: Props) {
                                         </TableCell>
                                         <TableCell>
                                           {(() => {
-                                            // Filter files to only show those with valid base64FileData
-                                            const validFiles = member.memberFiles?.filter(
-                                              file => file.base64FileData && file.base64FileData.trim() !== ''
-                                            ) || [];
-                                            
-                                            if (validFiles.length === 0) {
-                                              return "N/A";
-                                            }
-                                            
-                                            return validFiles.map((file, fileIdx) => (
-                                              <div key={fileIdx} style={{ marginBottom: "5px" }}>
+                                            const files = member.memberFiles ?? [];
+                                            const paymentId = payment.id;
+                                            const matchedFile = paymentId
+                                              ? files.find(f => f.paymentId === paymentId)
+                                              : undefined;
+                                            const fallbackFile = files[idx] && files[idx].base64FileData?.trim()
+                                              ? files[idx]
+                                              : files.find(f => f.base64FileData && f.base64FileData.trim() !== '');
+                                            const file = matchedFile || fallbackFile;
+
+                                            if (!file) return "N/A";
+
+                                            return (
+                                              <div style={{ marginBottom: "5px" }}>
                                                 <RouterLink
                                                   to={`/memberList/recipts/${file.id}`}
                                                   style={{
@@ -208,14 +221,14 @@ const MemberList = function ({ members }: Props) {
                                                   {file.fileName || "Receipt"}
                                                 </RouterLink>
                                               </div>
-                                            ));
+                                            );
                                           })()}
                                         </TableCell>
                                       </TableRow>
                                     ))
                                   ) : (
                                     <TableRow>
-                                      <TableCell colSpan={4} align="center">
+                                      <TableCell colSpan={5} align="center">
                                         No payment information available
                                       </TableCell>
                                     </TableRow>

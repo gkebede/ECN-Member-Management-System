@@ -4,22 +4,39 @@ import type { Member, MemberFileDto, Result, User } from "../types";
 import createMem from "./helper";
 import { router } from "../../router/Routes";
 
+ 
+ 
 
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || "https://localhost:5000/api";
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+axios.get("/users")
+  .then(res => console.log(res.data))
+  .catch(err => console.error(err));
+
+
 
 //axios.defaults.baseURL =  import.meta.env.VITE_API_URL;   //  'https://localhost:5000/api'; --  //https://localhost:5000/api/members
 //axios.defaults.baseURL =  "https://localhost:5000/api";
 const responseBody = <T>(response: AxiosResponse<T>) => response.data;
 
 axios.interceptors.request.use( config => {
+    // Ensure headers object exists
+    if (!config.headers) {
+       // config.headers = {};
+    }
+    
     const token = localStorage.getItem('jwt');
-    console.log("Request interceptor - Token exists:", !!token);
-    if(token && config.headers) {
+    const isPublicEndpoint = config.url?.includes('/account/login');
+    
+    // Only add token if it exists and request is not to a public endpoint
+    if (token && !isPublicEndpoint) {
         config.headers.Authorization = `Bearer ${token}`;
         console.log("Authorization header set:", config.headers.Authorization?.substring(0, 20) + "...");
-    } else {
-        console.warn("No token found or no headers object");
+    } else if (!token && !isPublicEndpoint) {
+        // Only log warning for non-public endpoints that require auth
+        console.log("No token found for authenticated endpoint:", config.url);
     }
+    
     return config;
 }, (error) => {
     console.error("Request interceptor error:", error);
@@ -52,7 +69,14 @@ axios.interceptors.response.use(async response => {
   console.log("Axios response error interceptor:", error);
   
   if (!error.response) {
+    const baseURL = axios.defaults.baseURL;
+    const requestURL = error.config?.url;
+    const fullURL = requestURL ? `${baseURL}${requestURL}` : 'unknown';
     console.error("No response received - network error or CORS issue");
+    console.error("Request URL:", fullURL);
+    console.error("Base URL:", baseURL);
+    console.error("Error details:", error.message);
+    console.error("Please ensure the backend is running on http://localhost:5000");
     return Promise.reject(error);
   }
   
@@ -120,10 +144,22 @@ axios.interceptors.response.use(async response => {
 const requests = {
   get: <T>(url: string) => axios.get<T>(url).then(responseBody),
   post: <T>(url: string, body: unknown, config?: AxiosRequestConfig) =>
-    axios.post<T>(url, body, config).then(responseBody),
+    axios.post<T>(url, body, {
+      ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config?.headers || {}),
+      },
+    }).then(responseBody),
   postPdf: <T>(url: string) => axios.post<T>(url).then(responseBody),
   put: <T>(url: string, body: unknown, config?: AxiosRequestConfig) =>
-    axios.put<T>(url, body, config).then(responseBody),
+    axios.put<T>(url, body, {
+      ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config?.headers || {}),
+      },
+    }).then(responseBody),
   delete: <T>(url: string) => axios.delete<T>(url).then(responseBody),
 };
 
@@ -181,7 +217,7 @@ const Members = {
         return requests.put<Result<Member>>(`/members/${member?.id}`, updatePayload);
     },
     delete: (id: string) => requests.delete<Result<void>>(`/members/${id}`),
-    uploadFiles: (memberId: string, files: File[], fileDescription?: string) => uploads(memberId, files, fileDescription),
+    uploadFiles: (memberId: string, files: File[], fileDescription?: string, paymentId?: string) => uploads(memberId, files, fileDescription, paymentId),
     getFiles: (memberId: string): Promise<MemberFileDto[]> =>
         requests.get<Result<MemberFileDto[]>>(`/members/files/${memberId}`)
             .then(response => response.value ?? []),
@@ -213,7 +249,7 @@ const Account = {
 
 
 // Upload files to a member
-const uploads = (memberId: string, files: File[], fileDescription?: string) => {
+const uploads = (memberId: string, files: File[], fileDescription?: string, paymentId?: string) => {
   const formData = new FormData();
   files.forEach(file => {
     formData.append("files", file);
@@ -221,6 +257,10 @@ const uploads = (memberId: string, files: File[], fileDescription?: string) => {
 
   if (fileDescription) {
     formData.append("fileDescription", fileDescription);
+  }
+
+  if (paymentId) {
+    formData.append("paymentId", paymentId);
   }
 
   return axios.post(`/members/uploads/${memberId}`, formData, {

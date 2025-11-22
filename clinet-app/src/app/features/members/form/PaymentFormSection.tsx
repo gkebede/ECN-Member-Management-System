@@ -19,30 +19,28 @@ import SaveIcon from '@mui/icons-material/Save';
 import WarningIcon from '@mui/icons-material/Warning';
 import type { Payment } from '../../../lib/types';
 import { v4 as uuidv4 } from 'uuid';
-import { useCallback, useState } from 'react';
-import React from 'react';
-//import { Payment } from '../../../lib/types';
+import { useCallback, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 
 const paymentMethods: string[] = [
-  'cash',
-  'creditCard',
-  'check',
-  'receiptAttached',
-  'bankTransfer',
+  'Cash',
+  'CreditCard',
+  'Check',
+  'ReceiptAttached',
+  'BankTransfer',
 ];
 
 const paymentRecurringTypes: string[] = [
-  'annual',
-  'monthly',
-  'quarterly',
-  'incident',
-  'membership',
-  'miscellaneous',
+  'Annual',
+  'Monthly',
+  'Quarterly',
+  'Incident',
+  'Membership',
+  'Miscellaneous',
 ];
 
 type Props = {
   payments: Payment[];
-  setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
+  setPayments: Dispatch<SetStateAction<Payment[]>>;
   memberId?: string;
   onSave?: (payments: Payment[]) => Promise<void>;
 };
@@ -54,7 +52,7 @@ export default function PaymentFormSection({ payments, setPayments, memberId, on
 
   const handleChange = useCallback((
     index: number,
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setPayments(prev => {
@@ -63,9 +61,12 @@ export default function PaymentFormSection({ payments, setPayments, memberId, on
 
       switch (name) {
         case 'paymentAmount': {
-          // Parse the value and keep as number internally
-          const numValue = value === '' ? 0 : parseFloat(value.replace(/[^0-9.-]+/g, ''));
-          payment.paymentAmount = isNaN(numValue) ? 0 : numValue;
+          if (value === '') {
+            payment.paymentAmount = 0;
+          } else {
+            const parsed = parseFloat(value);
+            payment.paymentAmount = Number.isNaN(parsed) ? 0 : parsed;
+          }
           break;
         }
         case 'paymentType':
@@ -102,13 +103,25 @@ export default function PaymentFormSection({ payments, setPayments, memberId, on
     setDeleteDialogOpen(true);
   };
 
-  const handleRemoveConfirm = () => {
+  const handleRemoveConfirm = async () => {
     if (deleteIndex !== null) {
       const updated = [...payments];
       updated.splice(deleteIndex, 1);
       setPayments(updated);
       setDeleteDialogOpen(false);
       setDeleteIndex(null);
+
+      if (!memberId || !onSave) return;
+      setTimeout(async () => {
+        setSaving(true);
+        try {
+          await onSave(updated);
+        } catch (error) {
+          console.error('Failed to save payments:', error);
+        } finally {
+          setSaving(false);
+        }
+      }, 0);
     }
   };
 
@@ -128,38 +141,6 @@ export default function PaymentFormSection({ payments, setPayments, memberId, on
       setSaving(false);
     }
   };
-
-  // const formatCurrency = (amount: number | undefined) => {
-  //   if (amount == null || isNaN(amount)) {
-  //     return '$0.00';
-  //   }
-  //   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  // };
-
-  // Debug: Log payments to see what we're receiving
-  React.useEffect(() => {
-    if (payments && payments.length > 0) {
-      console.log('PaymentFormSection - Payments:', payments);
-      payments.forEach((p, idx) => {
-        const amount = p.paymentAmount;
-        const displayValue = (() => {
-          if (amount == null || amount === undefined) return '';
-          const numValue = typeof amount === 'number' ? amount : parseFloat(String(amount));
-          return isNaN(numValue) ? '' : numValue;
-        })();
-        console.log(`Payment ${idx}:`, {
-          id: p.id,
-          paymentAmount: p.paymentAmount,
-          paymentAmountType: typeof p.paymentAmount,
-          displayValue: displayValue,
-          displayValueType: typeof displayValue,
-          paymentDate: p.paymentDate,
-          paymentType: p.paymentType,
-          paymentRecurringType: p.paymentRecurringType,
-        });
-      });
-    }
-  }, [payments]);
 
   return (
     <Paper elevation={3} sx={{ padding: 2, marginTop: 2 }}>
@@ -191,21 +172,9 @@ export default function PaymentFormSection({ payments, setPayments, memberId, on
               name="paymentAmount"
               type="number"
               value={
-                (() => {
-                  const amount = payment.paymentAmount;
-                  console.log(`PaymentFormSection - Rendering payment ${index} (${payment.id}): paymentAmount=${amount}, type=${typeof amount}`);
-                  if (amount == null || amount === undefined) {
-                    console.log(`  -> Amount is null/undefined, returning empty string`);
-                    return '';
-                  }
-                  const numValue = typeof amount === 'number' ? amount : parseFloat(String(amount));
-                  if (isNaN(numValue)) {
-                    console.log(`  -> Parsed value is NaN, returning empty string`);
-                    return '';
-                  }
-                  console.log(`  -> Returning numValue: ${numValue}`);
-                  return numValue;
-                })()
+                payment.paymentAmount === undefined || payment.paymentAmount === null
+                  ? ''
+                  : payment.paymentAmount
               }
               onChange={(e) => handleChange(index, e)}
               inputProps={{ min: 0, step: 0.01 }}
@@ -275,7 +244,7 @@ export default function PaymentFormSection({ payments, setPayments, memberId, on
           )}
         </Box>
       </Box>
-
+    
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}

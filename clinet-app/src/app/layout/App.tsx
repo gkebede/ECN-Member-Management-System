@@ -3,6 +3,19 @@ import NavBar from '../../../component/NavBar';
 import './style.css';
 import { Outlet, Link as RouterLink } from 'react-router-dom';
 import { Email, Phone, LocationOn } from '@mui/icons-material';
+
+//! C:\Users\ghail\OneDrive\Desktop\JS Course\CSharpReactProject\clinet-app>   and type ==> .env.development  to check waht url is used for the API calls
+// dotnet dev-certs https --check
+// dotnet dev-certs https --trust
+// dotnet dev-certs https --clean
+
+ //john.doe@example.com / john_doe      ==  true
+//getachew.hailu@example.com / getachew_hailu    ==  true
+                    
+//tomSmith@example.com / tom_smith     ==  FALSE
+                    
+
+//=>  Password123!
  
 function App() {
   return (
@@ -13,7 +26,7 @@ function App() {
         sx={{
           minHeight: 'calc(100vh - 64px - 200px)',
           paddingTop: '80px',
-          paddingBottom: '220px',
+          paddingBottom: '180px',
           width: '100%',
           maxWidth: '100%',
           margin: '0 auto',
@@ -29,11 +42,7 @@ function App() {
         sx={{
           width: '100%',
           maxWidth: '100vw',
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1,
+          mt: 'auto',
           backgroundImage: 'linear-gradient(135deg, #182a73 0%, #218aae 69%, #20a7ac 89%)',
           boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
           color: '#ffffff',

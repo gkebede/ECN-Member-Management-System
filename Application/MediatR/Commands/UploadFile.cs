@@ -14,6 +14,8 @@ namespace Application.MediatR
         {
             public List<IFormFile> Files { get; set; } = new List<IFormFile>();
             public string MemberId { get; set; } = string.Empty;
+            public string? PaymentId { get; set; }
+            public string? FileDescription { get; set; }
         }
 
         public class Handler : IRequestHandler<Command, Result<List<MemberFileDto>>>
@@ -64,7 +66,9 @@ namespace Application.MediatR
                             Size = (int)formFile.Length,
                             ImageData = fileBytes, // Save the actual file bytes
                             MemberId = member.Id,
-                            Member = member
+                            Member = member,
+                            PaymentId = request.PaymentId,
+                            FileDescription = request.FileDescription
                         };
 
                         _dbContext.MemberFiles.Add(memberFile);
@@ -79,7 +83,9 @@ namespace Application.MediatR
                         Id = f.Id.ToString(),
                         FileName = f.FileName,
                         Size = f.Size,
-                        ImageData = f.ImageData // Include ImageData so Base64FileData can be computed
+                        ImageData = f.ImageData, // Include ImageData so Base64FileData can be computed
+                        PaymentId = f.PaymentId,
+                        FileDescription = f.FileDescription
                     }).ToList();
 
                     return Result<List<MemberFileDto>>.Success(dtoList);

@@ -54,6 +54,12 @@ protected override void OnModelCreating(ModelBuilder builder)
     .HasForeignKey(f => f.MemberId)
     .OnDelete(DeleteBehavior.Cascade);
 
+    builder.Entity<MemberFile>()
+        .HasOne(f => f.Payment)
+        .WithMany(p => p.MemberFiles)
+        .HasForeignKey(f => f.PaymentId)
+        .OnDelete(DeleteBehavior.NoAction);
+
     builder.Entity<Member>()
         .HasMany(m => m.Addresses)
         .WithOne(a => a.Member)

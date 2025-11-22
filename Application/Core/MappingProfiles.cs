@@ -48,6 +48,47 @@ namespace Application.Core
         return DateTime.MinValue;
     }
 
+    private static DateTime ParseIncidentDate(IncidentDto src)
+    {
+        // ALWAYS use PaymentDate - this is the field that holds the actual value from the frontend
+        // The frontend form uses "paymentDate" field, so PaymentDate in the DTO contains the real date
+        // We should NEVER use IncidentDate from the DTO - it's just for backward compatibility
+        
+        string dateStr = src.PaymentDate ?? string.Empty;
+        
+        Console.WriteLine($"Mapping Incident Date - PaymentDate: '{src.PaymentDate}', IncidentDate (from DTO): '{src.IncidentDate}'");
+        
+        // Check if PaymentDate has a valid value (not empty, not MinValue)
+        if (string.IsNullOrWhiteSpace(dateStr) || 
+            dateStr == "0001-01-01" || 
+            dateStr == DateTime.MinValue.ToString("yyyy-MM-dd"))
+        {
+            Console.WriteLine($"  -> PaymentDate is invalid/empty, returning MinValue");
+            return DateTime.MinValue;
+        }
+        
+        // Try multiple parsing strategies
+        DateTime parsedDate;
+        
+        // First try ISO format (yyyy-MM-dd) which is what date inputs send
+        if (DateTime.TryParseExact(dateStr, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out parsedDate))
+        {
+            Console.WriteLine($"  -> Parsed PaymentDate '{dateStr}' (ISO) to: {parsedDate}");
+            return parsedDate;
+        }
+        
+        // Try flexible parsing
+        if (DateTime.TryParse(dateStr, out parsedDate))
+        {
+            Console.WriteLine($"  -> Parsed PaymentDate '{dateStr}' (flexible) to: {parsedDate}");
+            return parsedDate;
+        }
+        
+        // If all parsing fails, return MinValue
+        Console.WriteLine($"  -> Failed to parse PaymentDate '{dateStr}', returning MinValue");
+        return DateTime.MinValue;
+    }
+
     public MappingProfiles()
     {
         // ---------------------------------------
@@ -132,45 +173,7 @@ namespace Application.Core
             .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => src.IncidentDate.ToString("yyyy-MM-dd"))) // Map to PaymentDate for backward compatibility
             .ReverseMap()
             .ForMember(dest => dest.IncidentType, opt => opt.MapFrom(src => ParseIncidentType(src.IncidentType)))
-            .ForMember(dest => dest.IncidentDate, opt => opt.MapFrom(src => {
-                // ALWAYS use PaymentDate - this is the field that holds the actual value from the frontend
-                // The frontend form uses "paymentDate" field, so PaymentDate in the DTO contains the real date
-                // We should NEVER use IncidentDate from the DTO - it's just for backward compatibility
-                
-                string dateStr = src.PaymentDate ?? string.Empty;
-                
-                Console.WriteLine($"Mapping Incident Date - PaymentDate: '{src.PaymentDate}', IncidentDate (from DTO): '{src.IncidentDate}'");
-                
-                // Check if PaymentDate has a valid value (not empty, not MinValue)
-                if (string.IsNullOrWhiteSpace(dateStr) || 
-                    dateStr == "0001-01-01" || 
-                    dateStr == DateTime.MinValue.ToString("yyyy-MM-dd"))
-                {
-                    Console.WriteLine($"  -> PaymentDate is invalid/empty, returning MinValue");
-                    return DateTime.MinValue;
-                }
-                
-                // Try multiple parsing strategies
-                DateTime parsedDate;
-                
-                // First try ISO format (yyyy-MM-dd) which is what date inputs send
-                if (DateTime.TryParseExact(dateStr, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out parsedDate))
-                {
-                    Console.WriteLine($"  -> Parsed PaymentDate '{dateStr}' (ISO) to: {parsedDate}");
-                    return parsedDate;
-                }
-                
-                // Try flexible parsing
-                if (DateTime.TryParse(dateStr, out parsedDate))
-                {
-                    Console.WriteLine($"  -> Parsed PaymentDate '{dateStr}' (flexible) to: {parsedDate}");
-                    return parsedDate;
-                }
-                
-                // If all parsing fails, return MinValue
-                Console.WriteLine($"  -> Failed to parse PaymentDate '{dateStr}', returning MinValue");
-                return DateTime.MinValue;
-            }))
+            .ForMember(dest => dest.IncidentDate, opt => opt.MapFrom(src => ParseIncidentDate(src)))
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.MemberId, opt => opt.Ignore())
             .ForMember(dest => dest.Member, opt => opt.Ignore());
@@ -183,11 +186,14 @@ namespace Application.Core
             .ForMember(dest => dest.Base64FileData, opt => opt.MapFrom(src => Convert.ToBase64String(src.ImageData)))
             .ForMember(dest => dest.FilePath, opt => opt.Ignore()) // Not in domain model
             .ForMember(dest => dest.FileType, opt => opt.Ignore()) // Not in domain model
+            .ForMember(dest => dest.FileDescription, opt => opt.MapFrom(src => src.FileDescription))
+            .ForMember(dest => dest.PaymentId, opt => opt.MapFrom(src => src.PaymentId))
             .ReverseMap()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Id) ? Guid.NewGuid() : Guid.Parse(src.Id)))
             .ForMember(dest => dest.ImageData, opt => opt.MapFrom(src => src.ImageData ?? Array.Empty<byte>()))
             .ForMember(dest => dest.MemberId, opt => opt.Ignore())
-            .ForMember(dest => dest.Member, opt => opt.Ignore());
+            .ForMember(dest => dest.Member, opt => opt.Ignore())
+            .ForMember(dest => dest.Payment, opt => opt.Ignore());
     }
 }
 

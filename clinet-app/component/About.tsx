@@ -5,7 +5,7 @@ import {
   Paper,
   Grid,
   Card,
-  CardContent,
+
 } from '@mui/material';
 import { Groups, VolunteerActivism, Handshake, Diversity1 } from '@mui/icons-material';
 
@@ -213,6 +213,7 @@ export default function About() {
           borderRadius: 3,
           background: 'linear-gradient(135deg, #182a73 0%, #218aae 69%, #20a7ac 89%)',
           color: 'white',
+          mb: '4rem',
         }}
       >
         <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>

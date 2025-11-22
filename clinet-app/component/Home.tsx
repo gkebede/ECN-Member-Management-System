@@ -104,7 +104,7 @@ export default function Home() {
             </Button>
             <Button
               component={RouterLink}
-              to="/acconut"
+              to="/about"
               variant="outlined"
               size="large"
               sx={{
@@ -132,7 +132,7 @@ export default function Home() {
           elevation={8}
           sx={{
             p: 4,
-            mb: 6,
+            mb: '3rem',
             borderRadius: 4,
             background: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
@@ -275,6 +275,7 @@ export default function Home() {
             color: '#ffffff',
             textAlign: 'center',
             animation: `${fadeIn} 1.4s ease-in-out`,
+            mb: '3rem',
           }}
         >
           <Typography

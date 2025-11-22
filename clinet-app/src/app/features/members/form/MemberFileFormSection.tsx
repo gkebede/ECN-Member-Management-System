@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+import { useRef, type ChangeEvent } from 'react';
 import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Typography } from '@mui/material';
-import { MemberFile } from '../../../lib/types';
+import type { MemberFile } from '../../../lib/types';
 import agent from '../../../lib/api/agent';
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
 function MemberFileFormSection({ memberFiles, setMemberFiles, memberId }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setMemberFiles(files.map((file: File) => ({ filePath: file.name } as MemberFile)));
 

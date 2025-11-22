@@ -18,18 +18,14 @@ export default class UserStore {
     }
 
     login = async (username: string, password: string) => {
-        try {
-            const user = await agent.Account.login({ username, password });
-            runInAction(() => {
-                this.token = user.token;
-                this.username = user.username;
-                this.email = user.email;
-            });
-            localStorage.setItem('jwt', user.token);
-            return user;
-        } catch (error) {
-            throw error;
-        }
+        const user = await agent.Account.login({ username, password });
+        runInAction(() => {
+            this.token = user.token;
+            this.username = user.username;
+            this.email = user.email;
+        });
+        localStorage.setItem('jwt', user.token);
+        return user;
     }
 
     logout = () => {

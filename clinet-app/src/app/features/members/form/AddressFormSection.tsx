@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 import { Box, TextField, Button, IconButton, Typography, Paper, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import WarningIcon from '@mui/icons-material/Warning';
 import { v4 as uuidv4 } from 'uuid';
-import { Address } from '../../../lib/types';
+import type { Address } from '../../../lib/types';
 
 
  
 type Props = {
   addresses: Address[];
-  setAddresses: React.Dispatch<React.SetStateAction<Address[]>>;
+  setAddresses: Dispatch<SetStateAction<Address[]>>;
   memberId?: string;
   onSave?: (addresses: Address[]) => Promise<void>;
 };
@@ -20,7 +20,7 @@ export default function AddressFormSection({ addresses, setAddresses, memberId, 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
-  const handleChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (index: number, e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const updated = [...addresses];
     updated[index] = { ...updated[index], [name]: value };

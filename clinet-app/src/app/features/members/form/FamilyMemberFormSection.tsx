@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 import {
   Box,
   TextField,
@@ -18,7 +18,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import WarningIcon from '@mui/icons-material/Warning';
 // import EditIcon from '@mui/icons-material/Edit'; // Optional
 import { v4 as uuidv4 } from 'uuid';
-import { FamilyMember } from '../../../lib/types';
+import type { FamilyMember } from '../../../lib/types';
 
 // type FamilyMember = {
 //   id: string;
@@ -30,7 +30,7 @@ import { FamilyMember } from '../../../lib/types';
 
 type Props = {
   familymembers: FamilyMember[];
-  setFamilyMembers: React.Dispatch<React.SetStateAction<FamilyMember[]>>;
+  setFamilyMembers: Dispatch<SetStateAction<FamilyMember[]>>;
   memberId?: string;
   onSave?: (familyMembers: FamilyMember[]) => Promise<void>;
 };
@@ -47,7 +47,7 @@ export default function FamilyMemberFormSection({
 
   const handleChange = (
     index: number,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     const updated = [...familymembers];

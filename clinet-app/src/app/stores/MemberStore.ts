@@ -62,16 +62,6 @@ class MemberStore {
         // Normalize payments array
         const paymentsArray = member.payments || member.Payments || [];
         const normalizedPayments = paymentsArray.map((payment: any) => {
-          // Debug: Log raw payment data
-          console.log('Normalizing payment:', {
-            raw: payment,
-            amount: payment.amount,
-            Amount: payment.Amount,
-            paymentAmount: payment.paymentAmount,
-            PaymentAmount: payment.PaymentAmount,
-          });
-          
-          // Format payment date for date input (YYYY-MM-DD)
           let formattedDate = '';
           if (payment.paymentDate || payment.PaymentDate) {
             const dateStr = payment.paymentDate || payment.PaymentDate;
@@ -81,43 +71,22 @@ class MemberStore {
                 formattedDate = date.toISOString().split('T')[0];
               }
             } catch {
-              // If date parsing fails, use the string as-is
               formattedDate = dateStr;
             }
           }
           
-          // Convert PaymentType enum to lowercase camelCase
           const paymentTypeStr = payment.paymentType || payment.PaymentType || '';
-          let normalizedPaymentType = paymentTypeStr.toLowerCase();
-          // Handle PascalCase enum values (e.g., "CreditCard" -> "creditCard")
-          if (paymentTypeStr && paymentTypeStr !== paymentTypeStr.toLowerCase()) {
-            normalizedPaymentType = paymentTypeStr.charAt(0).toLowerCase() + paymentTypeStr.slice(1);
-          }
-          
-          // Convert PaymentRecurringType enum to lowercase
           const recurringTypeStr = payment.paymentRecurringType || payment.PaymentRecurringType || '';
-          let normalizedRecurringType = recurringTypeStr.toLowerCase();
-          // Handle PascalCase enum values
-          if (recurringTypeStr && recurringTypeStr !== recurringTypeStr.toLowerCase()) {
-            normalizedRecurringType = recurringTypeStr.charAt(0).toLowerCase() + recurringTypeStr.slice(1);
-          }
           
-          // Get payment amount - check all possible property names
           const amountValue = payment.amount ?? payment.Amount ?? payment.paymentAmount ?? payment.PaymentAmount;
           const finalAmount = amountValue != null ? (typeof amountValue === 'number' ? amountValue : parseFloat(String(amountValue))) : 0;
-          
-          console.log('Normalized payment amount:', {
-            original: amountValue,
-            final: finalAmount,
-            type: typeof amountValue,
-          });
           
           return {
             id: payment.id || payment.Id || '',
             paymentAmount: isNaN(finalAmount) ? 0 : finalAmount,
             paymentDate: formattedDate,
-            paymentType: normalizedPaymentType,
-            paymentRecurringType: normalizedRecurringType,
+            paymentType: paymentTypeStr,
+            paymentRecurringType: recurringTypeStr,
           };
         });
         
@@ -206,13 +175,16 @@ class MemberStore {
           finalIncidentDate = '';
         }
         
+        const eventNumberRaw = incident.eventNumber ?? incident.EventNumber ?? 0;
+        const eventNumberValue = typeof eventNumberRaw === 'string' ? parseInt(eventNumberRaw, 10) || 0 : eventNumberRaw ?? 0;
+        
         return {
           id: incident.id || incident.Id || '',
           incidentType: incident.incidentType || incident.IncidentType || '',
           incidentDescription: incident.incidentDescription || incident.IncidentDescription || '',
-          paymentDate: finalPaymentDate, // Primary field for form
-          incidentDate: finalIncidentDate, // Also set for backend compatibility (should match paymentDate)
-          eventNumber: incident.eventNumber ?? incident.EventNumber ?? 0,
+          paymentDate: finalPaymentDate,
+          incidentDate: finalIncidentDate,
+          eventNumber: eventNumberValue,
         };
       });
         
@@ -242,6 +214,8 @@ class MemberStore {
             fileName: file.fileName || file.FileName || '',
             fileType: file.fileType || file.FileType || '',
             base64FileData: base64Data,
+            paymentId: file.paymentId || file.PaymentId || '',
+            fileDescription: file.fileDescription || file.FileDescription || '',
           };
         });
         
@@ -307,16 +281,6 @@ class MemberStore {
       // Normalize payments array
       const paymentsArray = member.payments || (member as any).Payments || [];
       const normalizedPayments = paymentsArray.map((payment: any) => {
-        // Debug: Log raw payment data
-        console.log('loadMember - Normalizing payment:', {
-          raw: payment,
-          amount: payment.amount,
-          Amount: payment.Amount,
-          paymentAmount: payment.paymentAmount,
-          PaymentAmount: payment.PaymentAmount,
-        });
-        
-        // Format payment date for date input (YYYY-MM-DD)
         let formattedDate = '';
         if (payment.paymentDate || payment.PaymentDate) {
           const dateStr = payment.paymentDate || payment.PaymentDate;
@@ -326,43 +290,22 @@ class MemberStore {
               formattedDate = date.toISOString().split('T')[0];
             }
           } catch {
-            // If date parsing fails, use the string as-is
             formattedDate = dateStr;
           }
         }
         
-        // Convert PaymentType enum to lowercase camelCase
         const paymentTypeStr = payment.paymentType || payment.PaymentType || '';
-        let normalizedPaymentType = paymentTypeStr.toLowerCase();
-        // Handle PascalCase enum values (e.g., "CreditCard" -> "creditCard")
-        if (paymentTypeStr && paymentTypeStr !== paymentTypeStr.toLowerCase()) {
-          normalizedPaymentType = paymentTypeStr.charAt(0).toLowerCase() + paymentTypeStr.slice(1);
-        }
-        
-        // Convert PaymentRecurringType enum to lowercase
         const recurringTypeStr = payment.paymentRecurringType || payment.PaymentRecurringType || '';
-        let normalizedRecurringType = recurringTypeStr.toLowerCase();
-        // Handle PascalCase enum values
-        if (recurringTypeStr && recurringTypeStr !== recurringTypeStr.toLowerCase()) {
-          normalizedRecurringType = recurringTypeStr.charAt(0).toLowerCase() + recurringTypeStr.slice(1);
-        }
         
-        // Get payment amount - check all possible property names
         const amountValue = payment.amount ?? payment.Amount ?? payment.paymentAmount ?? payment.PaymentAmount;
         const finalAmount = amountValue != null ? (typeof amountValue === 'number' ? amountValue : parseFloat(String(amountValue))) : 0;
-        
-        console.log('loadMember - Normalized payment amount:', {
-          original: amountValue,
-          final: finalAmount,
-          type: typeof amountValue,
-        });
         
         return {
           id: payment.id || payment.Id || '',
           paymentAmount: isNaN(finalAmount) ? 0 : finalAmount,
           paymentDate: formattedDate,
-          paymentType: normalizedPaymentType,
-          paymentRecurringType: normalizedRecurringType,
+          paymentType: paymentTypeStr,
+          paymentRecurringType: recurringTypeStr,
         };
       });
       
@@ -451,13 +394,16 @@ class MemberStore {
           finalIncidentDate = '';
         }
         
+        const eventNumberRaw = incident.eventNumber ?? incident.EventNumber ?? 0;
+        const eventNumberValue = typeof eventNumberRaw === 'string' ? parseInt(eventNumberRaw, 10) || 0 : eventNumberRaw ?? 0;
+        
         return {
           id: incident.id || incident.Id || '',
           incidentType: incident.incidentType || incident.IncidentType || '',
           incidentDescription: incident.incidentDescription || incident.IncidentDescription || '',
-          paymentDate: finalPaymentDate, // Primary field for form
-          incidentDate: finalIncidentDate, // Also set for backend compatibility (should match paymentDate)
-          eventNumber: incident.eventNumber ?? incident.EventNumber ?? 0,
+          paymentDate: finalPaymentDate,
+          incidentDate: finalIncidentDate,
+          eventNumber: eventNumberValue,
         };
       });
       
@@ -487,6 +433,8 @@ class MemberStore {
           fileName: file.fileName || file.FileName || '',
           fileType: file.fileType || file.FileType || '',
           base64FileData: base64Data,
+          paymentId: file.paymentId || file.PaymentId || '',
+          fileDescription: file.fileDescription || file.FileDescription || '',
         };
       });
       

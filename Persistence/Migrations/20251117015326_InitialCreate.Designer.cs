@@ -12,7 +12,7 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251115031648_InitialCreate")]
+    [Migration("20251117015326_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -244,7 +244,6 @@ namespace Persistence.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("PaymentAmount")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("PaymentDate")

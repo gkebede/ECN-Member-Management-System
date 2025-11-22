@@ -3,12 +3,8 @@
 // import { Grid2, List, ListItem } from '@mui/material'
 // import { Member } from '../../../lib/types';
 import { useEffect } from 'react';
-// import { useStore } from '../../../app/stores/store';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '../../../stores/store';
-import Grid from '@mui/material/Grid';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
@@ -27,27 +23,26 @@ const MemberDashboard = observer(() => {
 
   if (loadingInitial) {
     return (
-      <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: '50vh' }}>
-        <Grid item>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <CircularProgress size={60} />
-            <Typography variant="h6">Loading members...</Typography>
-          </Box>
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          minHeight: '50vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <CircularProgress size={60} />
+          <Typography variant="h6">Loading members...</Typography>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <Grid container>
-      <Grid>
-        <List>
-          <ListItem>
-            <MemberList members={members} />
-          </ListItem>
-        </List>
-      </Grid>
-    </Grid>
+    <Box sx={{ width: '100%' }}>
+      <MemberList members={members} />
+    </Box>
   );
 });
 

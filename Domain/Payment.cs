@@ -25,6 +25,8 @@ public class Payment
 
     [JsonIgnore]
     public Member Member { get; set; } = null!;
+
+    public ICollection<MemberFile> MemberFiles { get; set; } = new List<MemberFile>();
 }
 
 

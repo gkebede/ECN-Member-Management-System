@@ -23,9 +23,9 @@ const routes: RouteObject[] = [
       { index: true, element: <Home /> },          // this means path = '/'
       { path: 'home', element: <Home /> },         // this means path = '/home'
       { path: 'login', element: <LoginPage /> },
-      { path: 'acconut', element: <About /> },
       { path: 'account', element: <Account /> },
       { path: 'contact', element: <Contact /> },
+     
       
       // Protected routes - require authentication
       {
@@ -36,6 +36,7 @@ const routes: RouteObject[] = [
           { path: 'edit/:id', element: <MemberFormWrapper /> },
           { path: 'memberList/recipts/:fileId', element: <ReceiptImage /> },
           { path: 'create', element: <MemberFormWrapper /> },
+          { path: 'about', element: <About /> },
         ],
       },
       

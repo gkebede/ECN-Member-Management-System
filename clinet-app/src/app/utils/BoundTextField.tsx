@@ -1,6 +1,7 @@
-import { TextField, TextFieldProps } from '@mui/material';
-import React from 'react';
-import { Member } from '../lib/types';
+import TextField from '@mui/material/TextField';
+import type { TextFieldProps } from '@mui/material/TextField';
+import type { ChangeEvent, FC } from 'react';
+import type { Member } from '../lib/types';
 
 interface BoundTextFieldProps extends Omit<TextFieldProps, 'onChange' | 'value' | 'name'> {
   name: keyof Member;
@@ -9,11 +10,11 @@ interface BoundTextFieldProps extends Omit<TextFieldProps, 'onChange' | 'value' 
   setValue: (
     key: keyof Member,
     value: string | boolean,
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
 }
 
-const BoundTextField: React.FC<BoundTextFieldProps> = ({ name, label, value, setValue, ...props }) => {
+const BoundTextField: FC<BoundTextFieldProps> = ({ name, label, value, setValue, ...props }) => {
   return (
     <TextField
       name={name}

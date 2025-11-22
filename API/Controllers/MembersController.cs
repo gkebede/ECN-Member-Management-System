@@ -102,11 +102,12 @@ namespace API.Controllers
         }
 
        // uploads files
-         [HttpPost("uploads/{memberId}")]
+        [HttpPost("uploads/{memberId}")]
          public async Task<IActionResult> UploadFiles(
              [FromRoute] Guid memberId,
              [FromForm] List<IFormFile> files,
-             [FromForm] string fileDescription) // <-- Capture this explicitly
+             [FromForm] string? fileDescription,
+             [FromForm] string? paymentId)
             {
 
                 const long maxFileSize = 10 * 1024 * 1024; // 10 MB
@@ -134,6 +135,8 @@ namespace API.Controllers
                     {
                         MemberId = memberId.ToString(),
                         Files = files,
+                        FileDescription = fileDescription,
+                        PaymentId = paymentId
                     });
 
                     return result.IsSuccess
